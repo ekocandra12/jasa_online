@@ -1,8 +1,11 @@
 package com.eko.jasa_online.activities
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
@@ -11,8 +14,11 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentTransaction
 import com.eko.jasa_online.fragments.BerandaFragment
 import com.eko.jasa_online.fragments.JasaFragment
-import com.eko.jasa_online.fragments.ProfilFragment
 import com.eko.jasa_online.R
+import com.eko.jasa_online.fragments.ProfileFragment
+import com.eko.jasa_online.helpers.Config
+import com.eko.jasa_online.helpers.SessionHandler
+import com.eko.jasa_online.models.User
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
@@ -23,7 +29,9 @@ class MainActivity : AppCompatActivity(),
     lateinit var navView: NavigationView
     lateinit var berandaFragment: BerandaFragment
     lateinit var jasaFragment: JasaFragment
-    lateinit var profileFragment: ProfilFragment
+    lateinit var profileFragment: ProfileFragment
+    lateinit var session : SessionHandler
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -37,7 +45,23 @@ class MainActivity : AppCompatActivity(),
         drawerLayout.addDrawerListener(toggle)
         toggle.syncState()
         navView.setNavigationItemSelectedListener(this)
-        openFragment(R.id.nav_beranda)
+
+        val fragmentId = intent.getIntExtra(
+            Config.EXTRA_FRAGMENT_ID,
+            R.id.nav_beranda)
+        openFragment(fragmentId)
+        session = SessionHandler(applicationContext)
+        val user: User? = session.getUser()
+        if(user != null) {
+            val headerView: View = navView.getHeaderView(0)
+            val tvNama: TextView =
+                headerView.findViewById(R.id.tvNamaHeader)
+            tvNama.text = user.nama
+            val tvEmail: TextView =
+                headerView.findViewById(R.id.tvEmailHeader)
+            tvEmail.text = user.email
+        }
+
     }
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         openFragment(item.itemId)
@@ -64,7 +88,7 @@ class MainActivity : AppCompatActivity(),
                     .commit()
             }
             R.id.nav_profile -> {
-                profileFragment = ProfilFragment()
+                profileFragment = ProfileFragment()
                 supportFragmentManager
                     .beginTransaction()
                     .replace(R.id.frame_layout, profileFragment)
@@ -79,13 +103,17 @@ class MainActivity : AppCompatActivity(),
                 builder.setIcon(R.drawable.ic_baseline_exit_to_app_24)
                 builder.setPositiveButton("Ya") { dialog, _ ->
                     dialog.dismiss()
-                    Snackbar.make(drawer_layout, "Anda klik ya!",
-                        Snackbar.LENGTH_LONG).show()
+                    session.removeUser()
+                    val intent = Intent(applicationContext,
+                        LoginActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+
                 }
                 builder.setNegativeButton("Tidak"){dialog, _ ->
                     dialog.dismiss()
-                    Snackbar.make(drawer_layout, "Anda klik tidak!",
-                        Snackbar.LENGTH_LONG).show()
+
                 }
                 val alertDialog: AlertDialog = builder.create()
                 alertDialog.show()

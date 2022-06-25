@@ -7,6 +7,7 @@ import android.text.TextUtils
 import android.widget.Toast
 import com.eko.jasa_online.R
 import com.eko.jasa_online.helpers.Config
+import com.eko.jasa_online.helpers.SessionHandler
 import com.eko.jasa_online.models.LoginResponse
 import com.eko.jasa_online.models.User
 import com.eko.jasa_online.services.ServiceBuilder
@@ -17,6 +18,12 @@ import retrofit2.Response
 class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val session = SessionHandler(applicationContext)
+        if(session.isLoggedIn()){
+            loadMainActivity();
+        }
+
+
         setContentView(R.layout.activity_login)
         btnLogin.setOnClickListener {
             val email = etEmail.text.toString()
@@ -51,6 +58,8 @@ class LoginActivity : AppCompatActivity() {
                             response.body()
                         loginResponse?.let {
                             val user: User = loginResponse.data
+                            session.saveUser(user)
+
                             Toast.makeText(this@LoginActivity, "Pengguna${user.nama} dengan email ${user.email} berhasil login!",
                             Toast.LENGTH_LONG).show()
                             loadMainActivity()
@@ -61,6 +70,11 @@ class LoginActivity : AppCompatActivity() {
                     }
                 }
             })
+        }
+        tvDaftar.setOnClickListener {
+            val intent = Intent(applicationContext,
+                RegisterActivity::class.java)
+            startActivity(intent)
         }
     }
     private fun loadMainActivity() {

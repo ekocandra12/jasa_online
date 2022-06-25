@@ -12,9 +12,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Jasa_Online">
         <activity
+            android:name=".activities.EditProfileActivity"
+            android:label="Ubah Profile"
+            android:parentActivityName=".activities.MainActivity"/>
+        <activity
+            android:name=".activities.RegisterActivity"
+            android:label="Daftar Akun"
+            android:parentActivityName=".activities.LoginActivity" />
+        <activity
             android:name=".activities.LoginActivity"
-            android:theme="@style/AppTheme.NoActionBar"/>
-            android:exported="false" />
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".activities.SplashScreenActivity"
             android:exported="true"
