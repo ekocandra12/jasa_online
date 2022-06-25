@@ -1,48 +1,84 @@
 package com.eko.jasa_online.fragments
 
+import android.app.ProgressDialog
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.eko.jasa_online.R
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-
+import com.eko.jasa_online.adapter.JasaAdapter
+import com.eko.jasa_online.models.Jasa
+import com.eko.jasa_online.models.JasaResponse
+import com.eko.jasa_online.services.JasaService
+import com.eko.jasa_online.services.ServiceBuilder
+import kotlinx.android.synthetic.main.fragment_beranda.view.*
+import retrofit2.Call
+import retrofit2.Response
+/**
+ * A simple [Fragment] subclass.
+ */
 class BerandaFragment : Fragment() {
-
-    private var param1: String? = null
-    private var param2: String? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
-
+    lateinit var rvData: RecyclerView
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_beranda, container, false)
+        val rootView = inflater.inflate(
+            R.layout.fragment_beranda,
+            container, false)
+        rvData = rootView.findViewById(R.id.rvData)
+        return rootView
     }
-
-    companion object {
-
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            BerandaFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.rvData.apply {
+            setHasFixedSize(true)
+            layoutManager = LinearLayoutManager(context)
+        }
+    }
+    // override method dari onresume
+    override fun onResume() {
+        super.onResume()
+        loadService() // memanggil method load gallery
+    }
+    private fun loadService() {
+        val loading = ProgressDialog(context)
+        loading.setMessage("Meload Jasa...")
+        loading.show()
+        val jasaService: JasaService =
+            ServiceBuilder.buildService(JasaService::class.java)
+        val requestCall: Call<JasaResponse> = jasaService.getJasa()
+        requestCall.enqueue(object : retrofit2.Callback<JasaResponse>{
+            override fun onFailure(call: Call<JasaResponse>, t: Throwable)
+            {
+                loading.dismiss()
+                Toast.makeText(context, "Error terjadi ketika sedang mengambil data jasa: " + t.toString(), Toast.LENGTH_LONG).show()
+            }
+            override fun onResponse(
+                call: Call<JasaResponse>,
+                response: Response<JasaResponse>
+            ) {
+                loading.dismiss()
+                if(!response.body()?.error!!) {
+                    val jasaResponse: JasaResponse? = response.body()
+                    jasaResponse?.let {
+                        val daftarJasa: List<Jasa> = jasaResponse.datas
+                        val jasaAdapter = JasaAdapter(daftarJasa) {
+                                service ->
+                            Toast.makeText(context, "service clicked${service.namaJasa}", Toast.LENGTH_SHORT).show()
+                        }
+                        jasaAdapter.notifyDataSetChanged()
+                        rvData.adapter = jasaAdapter
+                    }
+                }else{
+                    Toast.makeText(context, "Gagal menampilkan data jasa:" + response.body()?.message, Toast.LENGTH_LONG).show()
                 }
             }
+        });
     }
 }
